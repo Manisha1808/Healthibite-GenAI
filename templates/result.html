@@ -45,8 +45,15 @@
 <script>
 let text = `{{ result }}`;
 
-// 🚨 HANDLE ERRORS
-if (text === "QUOTA_ERROR") {
+// 🔥 HANDLE AI BUSY (MOST IMPORTANT)
+if (text === "AI_BUSY") {
+    diet.innerHTML = "<p>⚠️ AI is currently busy. Please try again shortly.</p>";
+    exercise.innerHTML = "<p>⚠️ Service temporarily unavailable.</p>";
+    sleep.innerHTML = "<p>⚠️ Please retry in a few moments.</p>";
+}
+
+// 🚨 OTHER ERRORS
+else if (text === "QUOTA_ERROR") {
     diet.innerText = "⚠️ AI limit reached. Try later.";
     exercise.innerText = "⚠️ Please wait.";
     sleep.innerText = "⚠️ Service unavailable.";
@@ -56,14 +63,16 @@ else if (text === "ERROR") {
     exercise.innerText = "⚠️ Try again.";
     sleep.innerText = "⚠️ Error occurred.";
 }
+
+// ✅ NORMAL FLOW
 else {
 
-    // 🔥 CLEAN TEXT FIRST
+    // 🔥 CLEAN TEXT
     text = text
         .replace(/\*\*/g, "")
         .replace(/\*/g, "");
 
-    // 🔥 SPLIT BY SECTIONS (BEST METHOD)
+    // 🔥 SPLIT SECTIONS
     function getSection(start, end) {
         const startIndex = text.toLowerCase().indexOf(start);
         if (startIndex === -1) return "";
@@ -79,24 +88,23 @@ else {
     let exerciseText = getSection("exercise", "sleep");
     let sleepText = getSection("sleep", null);
 
-    // 🔥 FORMAT TO BULLETS
+    // 🔥 FORMAT BULLETS
     function format(content) {
-    return content
-        .split("\n")
-        .map(line => line.trim())
-        .filter(line => 
-            line !== "" &&
-            line !== ":" &&
-            line !== "-" &&
-            line !== "." &&
-            line.length > 2   // 🔥 remove junk lines
-        )
-        .map(line => line.replace(/^[-•:]/, "").trim()) // clean prefixes
-        .filter(line => line !== "")
-        .map(line => `<li>${line}</li>`)
-        .join("");
-
-}
+        return content
+            .split("\n")
+            .map(line => line.trim())
+            .filter(line => 
+                line !== "" &&
+                line !== ":" &&
+                line !== "-" &&
+                line !== "." &&
+                line.length > 2
+            )
+            .map(line => line.replace(/^[-•:]/, "").trim())
+            .filter(line => line !== "")
+            .map(line => `<li>${line}</li>`)
+            .join("");
+    }
 
     diet.innerHTML = `<ul>${format(dietText)}</ul>`;
     exercise.innerHTML = `<ul>${format(exerciseText)}</ul>`;
