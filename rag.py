@@ -7,7 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import os
 
-client = genai.Client(api_key="GOOGLE_API_KEY")
+client = genai.Client(api_key="GEMINI_API_KEY")
 
 
 # 📄 Load data
