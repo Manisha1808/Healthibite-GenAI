@@ -7,8 +7,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import os
 
-client = genai.Client(api_key="GEMINI_API_KEY")
 
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # 📄 Load data
 with open("data/health_docs.txt", "r") as f:
@@ -26,32 +26,12 @@ def split_text(text, chunk_size=200, overlap=50):
 
 docs = split_text(text)
 
-# 🧠 Embedding model
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-
 # 🗄️ Persistent Chroma DB
 chroma_client = chromadb.Client(
     chromadb.config.Settings(persist_directory="./chroma_db")
 )
 
 collection = chroma_client.get_or_create_collection(name="health_data")
-
-# 🔥 Only create embeddings once
-if collection.count() == 0:
-    print("⚡ First run: Creating embeddings...")
-
-    for i, doc in enumerate(docs):
-        embedding = embedding_model.encode(doc).tolist()
-        collection.add(
-            documents=[doc],
-            embeddings=[embedding],
-            ids=[str(i)]
-        )
-
-    print("✅ Data stored in ChromaDB")
-
-else:
-    print("⚡ Using existing database (no re-embedding)")
 
 
 # 🧠 CLASSIFIER
@@ -104,7 +84,7 @@ def filter_docs(query, docs):
 
 # 🔥 MAIN FUNCTION (USED BY FLASK)
 def get_health_recommendation(query, age, goal, activity):
-
+    embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
     if not is_health_query(query):
         return "❌ I'm a health-focused assistant and can only help with health-related queries."
 
