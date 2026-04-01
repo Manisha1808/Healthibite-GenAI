@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request
 from rag import get_health_recommendation
 
@@ -6,7 +7,6 @@ app = Flask(__name__)
 @app.route("/", methods=["GET"])
 def home():
     return render_template("index.html")
-
 
 @app.route("/result", methods=["POST"])
 def result():
@@ -22,6 +22,6 @@ def result():
 
     return render_template("result.html", result=result)
 
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    port = int(os.environ.get("PORT", 10000))  # IMPORTANT
+    app.run(host="0.0.0.0", port=port)
