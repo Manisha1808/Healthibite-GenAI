@@ -1,4 +1,5 @@
 flask
+gunicorn
 sentence-transformers
 chromadb
 google-genai
