@@ -117,6 +117,8 @@ Sleep:
             break
         except Exception as e:
             print("Gemini error:", e)
+            if "429" in str(e):
+                 return "AI_BUSY"
             time.sleep(2)
 
     if response and hasattr(response, "text"):
