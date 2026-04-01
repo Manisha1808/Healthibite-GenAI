@@ -6,8 +6,13 @@ from google.genai import types
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import os
+from dotenv import load_dotenv
 
 client = genai.Client(api_key="GEMINI_API_KEY")
+load_dotenv()
+
+api_key = os.getenv("GEMINI_API_KEY")
+
 
 
 # 📄 Load data
