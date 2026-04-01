@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HealthiBite</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body>
+
+<div class="main">
+
+    <!-- HEADER -->
+    <div class="header">
+        <h1>HealthiBite 🥗</h1>
+
+        <div class="badge-wrapper">
+            <div class="badge">
+                ✨ Gen AI Powered
+            </div>
+        </div>
+    </div>
+
+    <!-- FORM CONTAINER -->
+    <div class="app-container">
+
+        <div class="form-section glass">
+
+            <h2>Tell us about you</h2>
+
+            <!-- ✅ CORRECT FORM -->
+            <form method="POST" action="/result">
+
+                <input type="text" name="age" placeholder="Age" required>
+
+                <select name="goal">
+                    <option>weight management</option>
+                    <option>improve energy</option>
+                    <option>better sleep</option>
+                    <option>general fitness</option>
+                </select>
+
+                <select name="activity">
+                    <option>low</option>
+                    <option>medium</option>
+                    <option>high</option>
+                </select>
+
+                <textarea name="query" placeholder="Describe your issue..." required></textarea>
+
+                <button type="submit">🚀 Generate Plan</button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+<div id="loader" class="loader hidden">
+    <div class="spinner"></div>
+    <p>Generating your AI plan...</p>
+</div>
+
+<script>
+document.querySelector("form").addEventListener("submit", function() {
+    document.getElementById("loader").classList.remove("hidden");
+});
+</script>
+
+</body>
+</html>

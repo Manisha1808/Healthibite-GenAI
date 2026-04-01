@@ -1,0 +1,151 @@
+==================== GENERAL HEALTH ====================
+
+[TYPE: lifestyle] [TOPIC: general]
+Healthy habits include daily walks and balanced meals.
+The body needs proper rest, nutrition, and movement to function well.
+Small changes like taking stairs instead of elevators improve fitness.
+Sunlight exposure helps maintain vitamin D levels.
+Listening to hunger and fullness cues improves eating habits.
+
+==================== HEADACHE ====================
+
+[TYPE: symptom] [TOPIC: headache]
+Headache can occur due to dehydration, stress, or lack of sleep.
+Eye strain from prolonged screen use can cause head pain.
+Neck tension from poor posture can trigger headaches.
+Weather changes and sinus pressure may also lead to headaches.
+Head pain may feel like pressure, throbbing, or heaviness.
+
+[TYPE: solution] [TOPIC: headache]
+Drink enough water to prevent dehydration-related headaches.
+Follow the 20-20-20 rule to reduce eye strain.
+Maintain proper posture while sitting and working.
+Apply a cold compress to reduce pain.
+Rest in a quiet, dark room if headache is severe.
+
+==================== FATIGUE ====================
+
+[TYPE: symptom] [TOPIC: fatigue]
+Fatigue can result from poor sleep, stress, or excessive workload.
+Low vitamin levels or dehydration may cause low energy.
+Feeling tired all day may indicate poor lifestyle habits.
+Mental fatigue can occur due to long screen exposure.
+
+[TYPE: solution] [TOPIC: fatigue]
+Maintain a regular sleep schedule to improve energy levels.
+Consume iron-rich foods like spinach and dates.
+Take short breaks during work to avoid burnout.
+Stay hydrated throughout the day.
+Engage in light physical activity to boost circulation.
+
+==================== STOMACH ISSUES ====================
+
+[TYPE: symptom] [TOPIC: digestion]
+Stomach pain can occur due to overeating or spicy food.
+Indigestion may cause bloating, gas, or discomfort.
+Eating too fast can lead to trapped air and bloating.
+Dairy products may cause discomfort in lactose intolerance.
+
+[TYPE: solution] [TOPIC: digestion]
+Eat slowly and chew food properly.
+Avoid oily and junk food.
+Include fiber-rich foods in your diet.
+Drink warm water or herbal tea for relief.
+Use probiotics like yogurt to improve gut health.
+
+==================== STRESS AND MENTAL HEALTH ====================
+
+[TYPE: symptom] [TOPIC: stress]
+Stress can cause mental fatigue, anxiety, and poor sleep.
+Burnout may lead to low motivation and irritability.
+Overthinking and workload can affect mental clarity.
+
+[TYPE: solution] [TOPIC: stress]
+Practice meditation and deep breathing exercises.
+Take regular breaks to relax your mind.
+Maintain work-life balance.
+Engage in activities you enjoy.
+Talk to someone you trust to release stress.
+
+==================== DIET GUIDELINES ====================
+
+[TYPE: diet] [TOPIC: nutrition]
+A balanced diet includes carbohydrates, proteins, fats, vitamins, and minerals.
+Protein-rich foods help maintain muscle strength and energy.
+Fruits and vegetables boost immunity and provide essential nutrients.
+Avoid excessive sugar and processed food.
+Eat smaller, frequent meals for better metabolism.
+
+==================== HYDRATION ====================
+
+[TYPE: lifestyle] [TOPIC: hydration]
+Drink at least 2 to 3 liters of water daily.
+Dehydration can cause fatigue, headaches, and dizziness.
+Water helps regulate body temperature and metabolism.
+Increase water intake during exercise or hot weather.
+
+==================== EXERCISE TYPES ====================
+
+[TYPE: exercise] [TOPIC: general]
+Walking improves heart health and boosts energy.
+Cardio exercises help burn calories and improve stamina.
+Strength training builds muscles and improves metabolism.
+Yoga enhances flexibility and reduces stress.
+Stretching improves posture and reduces stiffness.
+
+==================== EXERCISE FOR SPECIFIC CONDITIONS ====================
+
+[TYPE: exercise] [TOPIC: weight loss]
+Cardio exercises like running and cycling help reduce body fat.
+
+[TYPE: exercise] [TOPIC: stress]
+Yoga and meditation help calm the mind and reduce anxiety.
+
+[TYPE: exercise] [TOPIC: fatigue]
+Light activities like walking improve energy and blood flow.
+
+[TYPE: exercise] [TOPIC: back pain]
+Stretching and posture correction exercises reduce pain.
+
+==================== SLEEP GUIDELINES ====================
+
+[TYPE: sleep] [TOPIC: routine]
+Sleep for 7 to 8 hours daily for proper recovery.
+Maintain a fixed sleep schedule.
+Avoid screens before bedtime.
+Keep the sleeping environment dark and quiet.
+
+==================== SLEEP ISSUES ====================
+
+[TYPE: symptom] [TOPIC: sleep]
+Poor sleep may be caused by stress or irregular routine.
+Insomnia leads to difficulty falling or staying asleep.
+Excessive screen time affects sleep quality.
+
+==================== SLEEP SOLUTIONS ====================
+
+[TYPE: solution] [TOPIC: sleep]
+Follow a consistent bedtime routine.
+Avoid caffeine in the evening.
+Practice relaxation techniques before bed.
+Limit screen exposure before sleeping.
+
+==================== MULTI-SYMPTOM CASES ====================
+
+[TYPE: combined] [TOPIC: multiple]
+Fatigue and headache together may indicate dehydration.
+Stress and poor sleep often occur together.
+Low energy and dizziness may result from poor diet.
+Digestive issues and stress are often linked.
+
+==================== REAL-WORLD PHRASES ====================
+
+[TYPE: user_query] [TOPIC: natural_language]
+I feel tired all day.
+My head feels heavy.
+I am not sleeping well.
+I have stomach pain after eating.
+I feel stressed and low.
+I have no energy to work.
+My body feels weak.
+I feel lazy and unmotivated.

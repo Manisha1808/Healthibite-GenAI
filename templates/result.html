@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>HealthiBite Result</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="main">
+    
+    <div class="header">
+        <p class="subtitle">Plan your health with AI precision</p>
+
+        <div class="badge-wrapper">
+            <div class="badge">✨ Gen AI Powered</div>
+        </div>
+    </div>
+
+    <div class="result-page">
+
+    <div class="result-card">
+        <h2>🥗 Diet</h2>
+        <div id="diet"></div>
+    </div>
+
+    <div class="result-card">
+        <h2>🏃 Exercise</h2>
+        <div id="exercise"></div>
+    </div>
+
+    <div class="result-card">
+        <h2>😴 Sleep</h2>
+        <div id="sleep"></div>
+    </div>
+
+</div>
+
+    <div class="back-btn">
+        <a href="/">← Back</a>
+    </div>
+
+</div>
+
+<script>
+let text = `{{ result }}`;
+
+// 🚨 HANDLE ERRORS
+if (text === "QUOTA_ERROR") {
+    diet.innerText = "⚠️ AI limit reached. Try later.";
+    exercise.innerText = "⚠️ Please wait.";
+    sleep.innerText = "⚠️ Service unavailable.";
+}
+else if (text === "ERROR") {
+    diet.innerText = "⚠️ Something went wrong.";
+    exercise.innerText = "⚠️ Try again.";
+    sleep.innerText = "⚠️ Error occurred.";
+}
+else {
+
+    // 🔥 CLEAN TEXT FIRST
+    text = text
+        .replace(/\*\*/g, "")
+        .replace(/\*/g, "");
+
+    // 🔥 SPLIT BY SECTIONS (BEST METHOD)
+    function getSection(start, end) {
+        const startIndex = text.toLowerCase().indexOf(start);
+        if (startIndex === -1) return "";
+
+        const endIndex = end 
+            ? text.toLowerCase().indexOf(end, startIndex)
+            : text.length;
+
+        return text.substring(startIndex + start.length, endIndex).trim();
+    }
+
+    let dietText = getSection("diet", "exercise");
+    let exerciseText = getSection("exercise", "sleep");
+    let sleepText = getSection("sleep", null);
+
+    // 🔥 FORMAT TO BULLETS
+    function format(content) {
+    return content
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => 
+            line !== "" &&
+            line !== ":" &&
+            line !== "-" &&
+            line !== "." &&
+            line.length > 2   // 🔥 remove junk lines
+        )
+        .map(line => line.replace(/^[-•:]/, "").trim()) // clean prefixes
+        .filter(line => line !== "")
+        .map(line => `<li>${line}</li>`)
+        .join("");
+
+}
+
+    diet.innerHTML = `<ul>${format(dietText)}</ul>`;
+    exercise.innerHTML = `<ul>${format(exerciseText)}</ul>`;
+    sleep.innerHTML = `<ul>${format(sleepText)}</ul>`;
+}
+</script>
+</body>
+</html>
