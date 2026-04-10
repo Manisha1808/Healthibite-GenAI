@@ -41,74 +41,32 @@
     </div>
 
 </div>
-
 <script>
-let text = `{{ result }}`;
+let text = `{{ result|safe }}`;
 
-// 🔥 HANDLE AI BUSY (MOST IMPORTANT)
+// Handle AI busy
 if (text === "AI_BUSY") {
     diet.innerHTML = "<p>⚠️ AI is currently busy. Please try again shortly.</p>";
     exercise.innerHTML = "<p>⚠️ Service temporarily unavailable.</p>";
     sleep.innerHTML = "<p>⚠️ Please retry in a few moments.</p>";
 }
-
-// 🚨 OTHER ERRORS
-else if (text === "QUOTA_ERROR") {
-    diet.innerText = "⚠️ AI limit reached. Try later.";
-    exercise.innerText = "⚠️ Please wait.";
-    sleep.innerText = "⚠️ Service unavailable.";
-}
-else if (text === "ERROR") {
-    diet.innerText = "⚠️ Something went wrong.";
-    exercise.innerText = "⚠️ Try again.";
-    sleep.innerText = "⚠️ Error occurred.";
-}
-
-// ✅ NORMAL FLOW
 else {
+    try {
+        let data = JSON.parse(text);
 
-    // 🔥 CLEAN TEXT
-    text = text
-        .replace(/\*\*/g, "")
-        .replace(/\*/g, "");
+        function format(items) {
+            return items.map(item => `<li>${item}</li>`).join("");
+        }
 
-    // 🔥 SPLIT SECTIONS
-    function getSection(start, end) {
-        const startIndex = text.toLowerCase().indexOf(start);
-        if (startIndex === -1) return "";
+        diet.innerHTML = `<ul>${format(data.diet)}</ul>`;
+        exercise.innerHTML = `<ul>${format(data.exercise)}</ul>`;
+        sleep.innerHTML = `<ul>${format(data.sleep)}</ul>`;
 
-        const endIndex = end 
-            ? text.toLowerCase().indexOf(end, startIndex)
-            : text.length;
-
-        return text.substring(startIndex + start.length, endIndex).trim();
+    } catch (error) {
+        diet.innerHTML = "<p>⚠️ Failed to parse AI response.</p>";
+        exercise.innerHTML = "<p>⚠️ Formatting error.</p>";
+        sleep.innerHTML = "<p>⚠️ Please try again.</p>";
     }
-
-    let dietText = getSection("diet", "exercise");
-    let exerciseText = getSection("exercise", "sleep");
-    let sleepText = getSection("sleep", null);
-
-    // 🔥 FORMAT BULLETS
-    function format(content) {
-        return content
-            .split("\n")
-            .map(line => line.trim())
-            .filter(line => 
-                line !== "" &&
-                line !== ":" &&
-                line !== "-" &&
-                line !== "." &&
-                line.length > 2
-            )
-            .map(line => line.replace(/^[-•:]/, "").trim())
-            .filter(line => line !== "")
-            .map(line => `<li>${line}</li>`)
-            .join("");
-    }
-
-    diet.innerHTML = `<ul>${format(dietText)}</ul>`;
-    exercise.innerHTML = `<ul>${format(exerciseText)}</ul>`;
-    sleep.innerHTML = `<ul>${format(sleepText)}</ul>`;
 }
 </script>
 </body>

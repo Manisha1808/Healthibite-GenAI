@@ -2,22 +2,20 @@ from sentence_transformers import SentenceTransformer
 import chromadb
 from google import genai
 import time
-from google.genai import types
 from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
 import os
 from dotenv import load_dotenv
 
-client = genai.Client(api_key="GEMINI_API_KEY")
+# 🔑 Load environment variables
 load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
-
-
+client = genai.Client(api_key=api_key)
 
 # 📄 Load data
 with open("data/health_docs.txt", "r") as f:
     text = f.read()
+
 
 # ✂️ Chunking
 def split_text(text, chunk_size=200, overlap=50):
@@ -29,34 +27,20 @@ def split_text(text, chunk_size=200, overlap=50):
         start += chunk_size - overlap
     return chunks
 
+
 docs = split_text(text)
 
-# 🧠 Embedding model
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-
-# 🗄️ Persistent Chroma DB
-chroma_client = chromadb.Client(
-    chromadb.config.Settings(persist_directory="./chroma_db")
+# 🧠 Load embedding model ONCE
+embedding_model = SentenceTransformer(
+    "all-MiniLM-L6-v2",
+    local_files_only=True
 )
 
+# 🗄️ Load Persistent Chroma DB ONLY
+chroma_client = chromadb.PersistentClient(path="./chroma_db")
 collection = chroma_client.get_or_create_collection(name="health_data")
 
-# 🔥 Only create embeddings once
-if collection.count() == 0:
-    print("⚡ First run: Creating embeddings...")
-
-    for i, doc in enumerate(docs):
-        embedding = embedding_model.encode(doc).tolist()
-        collection.add(
-            documents=[doc],
-            embeddings=[embedding],
-            ids=[str(i)]
-        )
-
-    print("✅ Data stored in ChromaDB")
-
-else:
-    print("⚡ Using existing database (no re-embedding)")
+print("⚡ Loaded precomputed embeddings successfully!")
 
 
 # 🧠 CLASSIFIER
@@ -65,8 +49,6 @@ def is_health_query(query):
         response = client.models.generate_content(
             model="gemini-3-flash-preview",
             contents=f"""
-Classify the query.
-
 Return ONLY one word:
 HEALTH or NON_HEALTH
 
@@ -87,10 +69,12 @@ def rerank(query_embedding, docs, embedding_model):
         doc_embeddings
     )[0]
 
-    ranked_docs = [doc for _, doc in sorted(
-        zip(scores, docs),
-        reverse=True
-    )]
+    ranked_docs = [
+        doc for _, doc in sorted(
+            zip(scores, docs),
+            reverse=True
+        )
+    ]
 
     return ranked_docs
 
@@ -107,7 +91,30 @@ def filter_docs(query, docs):
     return filtered if filtered else docs
 
 
-# 🔥 MAIN FUNCTION (USED BY FLASK)
+# 🚨 SEVERITY DETECTOR
+def detect_severity(query):
+    severe_words = [
+        "severe", "sharp pain", "vomiting", "blood",
+        "chest pain", "fainting", "breathing difficulty",
+        "extreme dizziness"
+    ]
+
+    moderate_words = [
+        "persistent", "worsening", "constant pain",
+        "several days", "3 days", "repeated"
+    ]
+
+    query_lower = query.lower()
+
+    if any(word in query_lower for word in severe_words):
+        return "severe"
+    elif any(word in query_lower for word in moderate_words):
+        return "moderate"
+    else:
+        return "mild"
+
+
+# 🔥 MAIN FUNCTION
 def get_health_recommendation(query, age, goal, activity):
 
     if not is_health_query(query):
@@ -120,12 +127,70 @@ def get_health_recommendation(query, age, goal, activity):
         n_results=6
     )
 
-    retrieved_docs = results['documents'][0]
+    retrieved_docs = results["documents"][0]
 
     ranked_docs = rerank(query_embedding, retrieved_docs, embedding_model)
     filtered_docs = filter_docs(query, ranked_docs)
 
     context = "\n".join(filtered_docs[:3])
+
+    # 🚨 Detect symptom severity
+    severity = detect_severity(query)
+
+    # 🔥 Dynamic Prompt Rules
+    dynamic_rules = ""
+
+    # Goal-based rules
+    if goal.lower() == "weight management":
+        dynamic_rules += """
+If goal is weight loss:
+- suggest calorie deficit
+- recommend more cardio
+"""
+
+    elif goal.lower() == "muscle gain":
+        dynamic_rules += """
+If goal is muscle gain:
+- suggest protein-rich diet
+- recommend strength training
+"""
+
+    # Activity-based rules
+    if activity.lower() == "low":
+        dynamic_rules += """
+If activity level is low:
+- start with light exercise
+"""
+
+    # 🚨 Severity-based escalation rules
+    if severity == "severe":
+        dynamic_rules += """
+If symptoms appear severe:
+- strongly advise immediate medical consultation
+- mention urgent warning signs clearly
+"""
+
+    elif severity == "moderate":
+        dynamic_rules += """
+If symptoms appear moderate:
+- advise monitoring symptoms closely
+- recommend medical consultation if symptoms persist
+"""
+
+    else:
+        dynamic_rules += """
+If symptoms appear mild:
+- focus on home-care, diet, and lifestyle improvements
+"""
+
+    # Diet-specific keyword rules
+    diet_keywords = ["food", "diet", "eat", "nutrition"]
+
+    if any(word in query.lower() for word in diet_keywords):
+        dynamic_rules += """
+If query asks for diet advice:
+- focus on food recommendations
+"""
 
     prompt = f"""
 You are a professional health assistant.
@@ -136,31 +201,62 @@ Your role is to provide advice ONLY related to:
 - Exercise
 - Sleep
 - Wellness
-If goal is weight loss:
-- suggest calorie deficit
-- more cardio
 
-If goal is muscle gain:
-- suggest protein intake
-- strength training
+{dynamic_rules}
 
-If activity level is low:
-- start with light exercise
+IMPORTANT RESPONSE STYLE:
+- Respond in a professional healthcare advisory tone.
+- Recommendations should sound medically informed, clear, and trustworthy.
+- Avoid casual or vague wording.
+- Each recommendation must explain WHY it helps.
+- Keep advice concise but professional.
+- Use simple language understandable to general users.
+- Avoid robotic repetition.
+- Make each section sound like expert wellness guidance.
 
-If activity level is high:
-- suggest advanced routines
+IMPORTANT OUTPUT FORMAT:
+
+Return ONLY valid JSON in exactly this format:
+
+{{
+  "diet": [
+    "Professional recommendation 1",
+    "Professional recommendation 2",
+    "Professional recommendation 3"
+  ],
+  "exercise": [
+    "Professional recommendation 1",
+    "Professional recommendation 2",
+    "Professional recommendation 3"
+  ],
+  "sleep": [
+    "Professional recommendation 1",
+    "Professional recommendation 2",
+    "Professional recommendation 3"
+  ]
+}}
+
 STRICT RULES:
-1. If the user's query is NOT related to health, politely refuse.
-2. Do NOT answer questions about programming, technology, general knowledge, or unrelated topics.
-3. If unrelated, respond with:
-   "I'm a health-focused assistant and can only help with health, diet, exercise, or sleep-related questions."
+- Return JSON only
+- No markdown
+- No extra text before JSON
+- No extra text after JSON
+- Do NOT repeat sections
+- Do NOT include diet inside sleep
+- Do NOT include exercise inside sleep
+- Each section must contain only its own advice
+- Keep answers concise and practical
+- If unrelated, respond with:
+"I'm a health-focused assistant and can only help with health, diet, exercise, or sleep-related questions."
 
-4. Use ONLY the provided context for generating answers.
-5. Do NOT make up information outside the context.
-6.Do NOT be overly strict. If there is ANY possible health interpretation, try to help.
-7.If multiple issues are present, address all of them.
-
-
+RESPONSE QUALITY RULES:
+- Keep recommendations professional, medically informed, and practical
+- Provide specific food examples instead of generic categories
+- Explain briefly why each recommendation helps
+- Avoid vague phrases like "eat healthy food"
+- Keep each recommendation between 1–2 concise professional sentences
+- Avoid overly academic wording
+- Sound like a real nutrition expert speaking to a patient
 
 User Profile:
 - Age: {age}
@@ -172,19 +268,6 @@ User problem:
 
 Context:
 {context}
-
-Give personalized recommendations:
-
-Diet:
-- bullet points
-
-Exercise:
-- bullet points
-
-Sleep:
-- bullet points
-
-Keep it concise and practical.
 """
 
     response = None
@@ -196,14 +279,27 @@ Keep it concise and practical.
                 contents=prompt
             )
             break
+
         except Exception as e:
-            print("Gemini error:", e)   # 🔥 SEE REAL ERROR
+            print("Gemini error:", e)
+
+            if "429" in str(e):
+                return "AI_BUSY"
+
             time.sleep(2)
 
     if response and hasattr(response, "text"):
-            return response.text
+        cleaned = response.text.replace("```json", "").replace("```", "").strip()
+
+        print("\n==============================")
+        print("RAW GEMINI OUTPUT:")
+        print(cleaned)
+        print("==============================\n")
+
+        return cleaned
+
     else:
-            return "⚠️ AI is busy. Try again in a few seconds."
+        return "AI_BUSY"
 
 
 # ✅ SAFETY
