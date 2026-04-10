@@ -37,7 +37,10 @@ embedding_model = SentenceTransformer(
 )
 
 # 🗄️ Load Persistent Chroma DB ONLY
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
+
+chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 collection = chroma_client.get_or_create_collection(name="health_data")
 
 print("⚡ Loaded precomputed embeddings successfully!")
