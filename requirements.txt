@@ -1,6 +1,5 @@
-flask
 gunicorn
-sentence-transformers
+flask
 chromadb
-google-genai
-scikit-learn
+sentence-transformers
+google-generativeai

@@ -3,6 +3,7 @@ body {
     font-family: 'Segoe UI', sans-serif;
     background: radial-gradient(circle at top, #1e1b4b, #020617);
     color: white;
+    overflow-x: hidden;
 }
 
 /* Header */
@@ -138,6 +139,13 @@ h2 {
     color: #c4b5fd;
     font-size: 20px;
 }
+
+.main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
 /* RESULT PAGE */
 .result-page {
     max-width: 800px;
@@ -244,4 +252,236 @@ h2 {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+.history-btn {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.history-btn a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.choices {
+    margin-bottom: 15px;
+}
+
+.choices__inner {
+    background: #2a2a4a !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    min-height: 50px;
+    box-shadow: 0 0 12px rgba(106, 90, 205, 0.25);
+}
+
+.choices__list--dropdown {
+    background: #1b1b35 !important;
+    color: white !important;
+    border-radius: 12px !important;
+    border: none !important;
+}
+
+.choices__item--choice {
+    color: white !important;
+}
+
+.choices__item--choice.is-highlighted {
+    background-color: #6a5acd !important;
+}
+.choices__list--single {
+    color: white !important;
+}
+
+.choices[data-type*=select-one]::after {
+    border-color: white transparent transparent transparent !important;
+}
+.history-card {
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.history-card:hover {
+    transform: scale(1.01);
+}
+
+.history-details {
+    margin-top: 15px;
+    padding: 20px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    color: #e2e8f0;
+}
+
+.history-details.hidden {
+    display: none;
+}
+
+.history-details pre {
+    white-space: pre-wrap;
+    font-family: inherit;
+}
+
+/* Fix spacing inside each history card */
+.history-card p {
+    margin: 8px 0;
+}
+
+/* Section wrapper */
+.history-section {
+    margin-top: 15px;
+}
+
+/* Section headings */
+.history-section h3 {
+    color: #a78bfa;
+    margin: 15px 0 8px 0;
+    font-size: 20px;
+}
+
+/* Remove extra top gap from first heading */
+.history-section h3:first-child {
+    margin-top: 0;
+}
+
+/* Lists */
+.history-section ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0 0 15px 0;
+}
+
+/* List items */
+.history-section li {
+    margin-bottom: 10px;
+    padding-left: 20px;
+    position: relative;
+    color: #e2e8f0;
+    line-height: 1.6;
+}
+
+/* Bullet dots */
+.history-section li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #8b5cf6;
+}
+
+/* MOBILE RESPONSIVENESS */
+@media (max-width: 768px) {
+
+    body {
+        overflow-x: hidden;
+    }
+
+    .header {
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .header h1 {
+        font-size: 28px;
+        text-align: center;
+    }
+
+    .subtitle {
+        font-size: 14px;
+        padding: 6px 14px;
+    }
+
+    .badge-wrapper {
+        margin-top: 12px;
+    }
+
+    .app-container {
+        width: 100%;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+    }
+
+    .glass {
+        width: 100%;
+        max-width: 100%;
+        padding: 22px;
+        border-radius: 20px;
+    }
+
+    .form-section h2 {
+        font-size: 22px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    input,
+    textarea,
+    select,
+    .choices__inner {
+        width: 100%;
+        font-size: 14px;
+    }
+
+    textarea {
+        min-height: 90px;
+    }
+
+    button {
+        width: 100%;
+        font-size: 15px;
+        padding: 12px;
+    }
+
+    .history-btn {
+        text-align: center;
+        margin-top: 15px;
+    }
+
+    .result-page {
+        width: 100%;
+        margin: 20px auto;
+    }
+
+    .result-card {
+        padding: 18px;
+        margin-bottom: 18px;
+    }
+
+    .result-card h2 {
+        font-size: 18px;
+    }
+
+    .result-card li {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .history-details {
+        padding: 15px;
+    }
+
+    .history-section h3 {
+        font-size: 18px;
+    }
+
+    .history-section li {
+        font-size: 14px;
+    }
+
+    .back-btn {
+        text-align: center;
+        margin-top: 20px;
+    }
+    .app-container {
+    min-height: auto;
+}
+
+.main {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+     justify-content: center;
+}
 }

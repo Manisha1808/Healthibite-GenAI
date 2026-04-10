@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Health History</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="main">
+    <div class="header">
+        <h1>📊 Health History</h1>
+        <p class="subtitle">Track your consultations over time</p>
+    </div>
+
+    <div class="result-page">
+
+        {% for row in rows %}
+        <div class="result-card history-card" onclick="toggleDetails('detail{{ row[0] }}')">
+
+            <p><strong>Date:</strong> {{ row[1] }}</p>
+            <p><strong>Query:</strong> {{ row[2] }}</p>
+            <p><strong>Severity:</strong> {{ row[3] }}</p>
+
+            <div id="detail{{ row[0] }}" class="history-details hidden">
+                {% set response = row[4] | from_json %}
+
+<div class="history-section">
+    <h3>🥗 Diet</h3>
+    <ul>
+        {% for item in response.diet %}
+        <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>🏃 Exercise</h3>
+    <ul>
+        {% for item in response.exercise %}
+        <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>😴 Sleep</h3>
+    <ul>
+        {% for item in response.sleep %}
+        <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+</div>
+            </div>
+
+        </div>
+        {% endfor %}
+
+        <div class="back-btn">
+            <a href="/">← Back Home</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleDetails(id) {
+    const box = document.getElementById(id);
+    box.classList.toggle("hidden");
+}
+</script>
+
+</body>
+</html>

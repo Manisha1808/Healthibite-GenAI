@@ -5,6 +5,8 @@
 <title>HealthiBite</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
 </head>
 <body>
@@ -34,28 +36,28 @@
 
                 <input type="text" name="age" placeholder="Age" required>
 
-                <select name="goal">
-                    <option value=""> Select your goal </option>
-                    <option>weight management</option>
-                    <option>improve energy</option>
-                    <option>better sleep</option>
-                    <option>general fitness</option>
-                </select>
+                <select id="goal" name="goal">
+    <option value="">Select your goal</option>
+    <option>weight management</option>
+    <option>improve energy</option>
+    <option>better sleep</option>
+    <option>general fitness</option>
+</select>
 
-                <select name="activity">
-
-                    <option value=""> Select Activity level </option>
-=======
-                    
-
-                    <option>low</option>
-                    <option>medium</option>
-                    <option>high</option>
-                </select>
+<select id="activity" name="activity">
+    <option value="">Select Activity level</option>
+    <option>low</option>
+    <option>medium</option>
+    <option>high</option>
+</select>
 
                 <textarea name="query" placeholder="Describe your issue..." required></textarea>
 
                 <button type="submit">🚀 Generate Plan</button>
+
+                <div class="history-btn">
+    <a href="/history">📊 View History</a>
+</div>
 
             </form>
 
@@ -70,8 +72,22 @@
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+    new Choices("#goal", {
+        searchEnabled: false,
+        itemSelectText: ""
+    });
+
+    new Choices("#activity", {
+        searchEnabled: false,
+        itemSelectText: ""
+    });
+});
+
 document.querySelector("form").addEventListener("submit", function() {
     document.getElementById("loader").classList.remove("hidden");
+
+
 });
 </script>
 

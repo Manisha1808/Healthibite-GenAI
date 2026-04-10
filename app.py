@@ -1,8 +1,12 @@
 import os
 from flask import Flask, render_template, request
 from rag import get_health_recommendation
+import sqlite3
+import json
+
 
 app = Flask(__name__)
+app.jinja_env.filters['from_json'] = json.loads
 
 @app.route("/", methods=["GET"])
 def home():
@@ -21,6 +25,22 @@ def result():
         result = f"⚠️ Error: {str(e)}"
 
     return render_template("result.html", result=result)
+
+@app.route("/history")
+def history():
+    conn = sqlite3.connect("healthibite.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, timestamp, query, severity, response
+        FROM history
+        ORDER BY id DESC
+    """)
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    return render_template("history.html", rows=rows)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # IMPORTANT

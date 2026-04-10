@@ -5,7 +5,9 @@ import time
 from sklearn.metrics.pairwise import cosine_similarity
 import os
 from dotenv import load_dotenv
-
+from functools import lru_cache
+from database import init_db
+from database import save_history
 # 🔑 Load environment variables
 load_dotenv()
 
@@ -13,7 +15,7 @@ api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
 # 📄 Load data
-with open("data/health_docs.txt", "r") as f:
+with open("data/health_docs.txt", "r", encoding="utf-8") as f:
     text = f.read()
 
 
@@ -35,7 +37,7 @@ embedding_model = SentenceTransformer(
     "all-MiniLM-L6-v2"
 )
 
-# 🗄️ Load Persistent Chroma DB ONLY
+# 🗄️ Load Persistent Chroma DB
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
 
@@ -45,27 +47,18 @@ collection = chroma_client.get_or_create_collection(name="health_data")
 print("⚡ Loaded precomputed embeddings successfully!")
 
 
-# 🧠 CLASSIFIER
-def is_health_query(query):
-    try:
-        response = client.models.generate_content(
-            model="gemini-3-flash-preview",
-            contents=f"""
-Return ONLY one word:
-HEALTH or NON_HEALTH
-
-Query: {query}
-"""
-        )
-        return "HEALTH" in response.text.upper()
-    except:
-        return True
+# ⚡ CACHE GEMINI RESPONSES
+@lru_cache(maxsize=100)
+def cached_gemini_response(prompt):
+    response = client.models.generate_content(
+        model="gemini-3-flash-preview",
+        contents=prompt
+    )
+    return response.text
 
 
 # 🔁 RERANK
-def rerank(query_embedding, docs, embedding_model):
-    doc_embeddings = [embedding_model.encode(doc) for doc in docs]
-
+def rerank(query_embedding, docs, doc_embeddings):
     scores = cosine_similarity(
         [query_embedding],
         doc_embeddings
@@ -119,19 +112,23 @@ def detect_severity(query):
 # 🔥 MAIN FUNCTION
 def get_health_recommendation(query, age, goal, activity):
 
-    if not is_health_query(query):
-        return "❌ I'm a health-focused assistant and can only help with health-related queries."
-
+    # Generate query embedding
     query_embedding = embedding_model.encode(query).tolist()
 
+    # Faster retrieval: reduced from 6 → 3
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=6
+        n_results=3,
+        include=["documents", "embeddings"]
     )
 
     retrieved_docs = results["documents"][0]
+    retrieved_embeddings = results["embeddings"][0]
 
-    ranked_docs = rerank(query_embedding, retrieved_docs, embedding_model)
+    ranked_docs = rerank(
+    query_embedding,
+    retrieved_docs,
+    retrieved_embeddings )
     filtered_docs = filter_docs(query, ranked_docs)
 
     context = "\n".join(filtered_docs[:3])
@@ -148,6 +145,7 @@ def get_health_recommendation(query, age, goal, activity):
 If goal is weight loss:
 - suggest calorie deficit
 - recommend more cardio
+- suggest exact low-calorie meals
 """
 
     elif goal.lower() == "muscle gain":
@@ -164,7 +162,13 @@ If activity level is low:
 - start with light exercise
 """
 
-    # 🚨 Severity-based escalation rules
+    elif activity.lower() == "high":
+        dynamic_rules += """
+If activity level is high:
+- recommend advanced exercise routines
+"""
+
+    # Severity rules
     if severity == "severe":
         dynamic_rules += """
 If symptoms appear severe:
@@ -185,15 +189,17 @@ If symptoms appear mild:
 - focus on home-care, diet, and lifestyle improvements
 """
 
-    # Diet-specific keyword rules
-    diet_keywords = ["food", "diet", "eat", "nutrition"]
+    # Diet-specific rules
+    diet_keywords = ["food", "diet", "eat", "nutrition", "meal"]
 
     if any(word in query.lower() for word in diet_keywords):
         dynamic_rules += """
 If query asks for diet advice:
-- focus on food recommendations
+- focus on specific meal recommendations
+- include breakfast, lunch, dinner examples
 """
 
+    # 🔥 Prompt
     prompt = f"""
 You are a professional health assistant.
 
@@ -207,14 +213,11 @@ Your role is to provide advice ONLY related to:
 {dynamic_rules}
 
 IMPORTANT RESPONSE STYLE:
-- Respond in a professional healthcare advisory tone.
-- Recommendations should sound medically informed, clear, and trustworthy.
-- Avoid casual or vague wording.
-- Each recommendation must explain WHY it helps.
-- Keep advice concise but professional.
-- Use simple language understandable to general users.
-- Avoid robotic repetition.
-- Make each section sound like expert wellness guidance.
+- Respond in a professional healthcare advisory tone
+- Recommendations should sound medically informed, clear, and trustworthy
+- Each recommendation must explain WHY it helps
+- Keep advice concise but professional
+- Sound like a real nutrition expert speaking to a patient
 
 IMPORTANT OUTPUT FORMAT:
 
@@ -222,19 +225,19 @@ Return ONLY valid JSON in exactly this format:
 
 {{
   "diet": [
-    "Professional recommendation 1",
-    "Professional recommendation 2",
-    "Professional recommendation 3"
+    "Recommendation 1",
+    "Recommendation 2",
+    "Recommendation 3"
   ],
   "exercise": [
-    "Professional recommendation 1",
-    "Professional recommendation 2",
-    "Professional recommendation 3"
+    "Recommendation 1",
+    "Recommendation 2",
+    "Recommendation 3"
   ],
   "sleep": [
-    "Professional recommendation 1",
-    "Professional recommendation 2",
-    "Professional recommendation 3"
+    "Recommendation 1",
+    "Recommendation 2",
+    "Recommendation 3"
   ]
 }}
 
@@ -244,42 +247,27 @@ STRICT RULES:
 - No extra text before JSON
 - No extra text after JSON
 - Do NOT repeat sections
-- Do NOT include diet inside sleep
-- Do NOT include exercise inside sleep
 - Each section must contain only its own advice
-- Keep answers concise and practical
-- If unrelated, respond with:
-"I'm a health-focused assistant and can only help with health, diet, exercise, or sleep-related questions."
-
-RESPONSE QUALITY RULES:
-- Keep recommendations professional, medically informed, and practical
-- Provide specific food examples instead of generic categories
-- Explain briefly why each recommendation helps
-- Avoid vague phrases like "eat healthy food"
-- Keep each recommendation between 1–2 concise professional sentences
-- Avoid overly academic wording
-- Sound like a real nutrition expert speaking to a patient
+- If unrelated, politely refuse health-unrelated query
 
 User Profile:
 - Age: {age}
 - Goal: {goal}
 - Activity Level: {activity}
 
-User problem:
+User Problem:
 {query}
 
 Context:
 {context}
 """
 
-    response = None
+    # ⚡ OPTIMIZED RESPONSE GENERATION WITH CACHE
+    response_text = None
 
     for i in range(3):
         try:
-            response = client.models.generate_content(
-                model="gemini-3-flash-preview",
-                contents=prompt
-            )
+            response_text = cached_gemini_response(prompt)
             break
 
         except Exception as e:
@@ -290,13 +278,22 @@ Context:
 
             time.sleep(2)
 
-    if response and hasattr(response, "text"):
-        cleaned = response.text.replace("```json", "").replace("```", "").strip()
+    if response_text:
+        cleaned = response_text.replace("```json", "").replace("```", "").strip()
 
         print("\n==============================")
         print("RAW GEMINI OUTPUT:")
         print(cleaned)
         print("==============================\n")
+
+        save_history(
+    query,
+    age,
+    goal,
+    activity,
+    severity,
+    cleaned
+)
 
         return cleaned
 
@@ -307,3 +304,6 @@ Context:
 # ✅ SAFETY
 if __name__ == "__main__":
     print("Run app.py instead")
+
+init_db()
+
