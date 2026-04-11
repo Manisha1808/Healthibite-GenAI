@@ -228,14 +228,28 @@ Context:
           try:
               parsed = json.loads(cleaned)
           except Exception as e:
+              
               print("⚠️ Invalid JSON from AI, using fallback")
 
               parsed = {
-            "diet": ["Eat simple, balanced meals like rice, vegetables, and protein."],
-            "exercise": ["Do light walking for 15–20 minutes daily."],
-            "sleep": ["Maintain a consistent sleep schedule of 7–8 hours."]         }
+        "diet": [
+            "Eat simple, home-cooked meals like rice, dal, vegetables, and fruits.",
+            "Stay hydrated and avoid processed or heavy foods.",
+            "Include light and easily digestible meals throughout the day."
+        ],
+        "exercise": [
+            "Do light walking for 15–20 minutes daily.",
+            "Avoid heavy workouts if you are not feeling well.",
+            "Stretch your body gently to reduce stiffness."
+        ],
+        "sleep": [
+            "Maintain 7–8 hours of sleep.",
+            "Avoid screens before bedtime.",
+            "Keep a consistent sleep schedule."
+        ]
+    }
 
-          cleaned = json.dumps(parsed)
+              cleaned = json.dumps(parsed)
 
     # Save history
           try:
