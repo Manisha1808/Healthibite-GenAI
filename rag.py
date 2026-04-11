@@ -6,6 +6,16 @@ from dotenv import load_dotenv
 from functools import lru_cache
 from database import save_history
 from sklearn.feature_extraction.text import TfidfVectorizer
+import re
+
+def clean_json_response(text):
+    text = text.replace("```json", "").replace("```", "").strip()
+
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        return match.group(0)
+
+    return text
 
 # 🔑 Load environment variables
 load_dotenv()
@@ -212,7 +222,7 @@ Context:
             time.sleep(2)
 
     if response_text:
-        cleaned = response_text.replace("```json", "").replace("```", "").strip()
+        cleaned = clean_json_response(response_text)
 
         # Save history
         try:
