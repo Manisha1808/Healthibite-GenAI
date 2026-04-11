@@ -3,7 +3,6 @@ from google import genai
 import time
 import os
 from dotenv import load_dotenv
-from functools import lru_cache
 from database import save_history
 from sklearn.feature_extraction.text import TfidfVectorizer
 import re
@@ -57,16 +56,19 @@ def get_embeddings(texts):
 print("⚡ Lightweight RAG system ready")
 
 # ⚡ CACHE GEMINI RESPONSES
-@lru_cache(maxsize=100)
-def cached_gemini_response(prompt):
+def get_gemini_response(prompt):
     if client is None:
-        return "AI_BUSY"
+        return None
 
-    response = client.models.generate_content(
-        model="gemini-3-flash-preview",
-        contents=prompt
-    )
-    return response.text
+    try:
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt
+        )
+        return response.text
+    except Exception as e:
+        print("Gemini error:", e)
+        return None
 
 # 🚨 SEVERITY DETECTOR
 def detect_severity(query):
@@ -211,18 +213,15 @@ Context:
     response_text = None
 
     for _ in range(3):
-        try:
-            response_text = cached_gemini_response(prompt)
-            break
-        except Exception as e:
-            print("Gemini error:", e)
+        response_text = get_gemini_response(prompt)
 
-            if "429" in str(e):
-                return "AI_BUSY"
+        if response_text:   # ✅ only break if valid response
+           break
 
-            time.sleep(2)
+        print("Retrying Gemini...")
+        time.sleep(2)
 
-    if response_text:
+    if response_text is not None:
           cleaned = clean_json_response(response_text)
 
           try:

@@ -19,28 +19,35 @@
 
     <div class="result-page">
 
-    <div class="result-card">
-        <h2>🥗 Diet</h2>
-        <div id="diet"></div>
+        <!-- ✅ STATUS MESSAGE -->
+        <p style="font-size:12px; opacity:0.6; margin-bottom:15px; text-align:center;">
+            💡 AI-generated plan based on your input
+        </p>
+
+        <div class="result-card">
+            <h2>🥗 Diet</h2>
+            <div id="diet"></div>
+        </div>
+
+        <div class="result-card">
+            <h2>🏃 Exercise</h2>
+            <div id="exercise"></div>
+        </div>
+
+        <div class="result-card">
+            <h2>😴 Sleep</h2>
+            <div id="sleep"></div>
+        </div>
+
     </div>
 
-    <div class="result-card">
-        <h2>🏃 Exercise</h2>
-        <div id="exercise"></div>
-    </div>
-
-    <div class="result-card">
-        <h2>😴 Sleep</h2>
-        <div id="sleep"></div>
-    </div>
-
-</div>
-
+    
     <div class="back-btn">
         <a href="/">← Back</a>
     </div>
 
 </div>
+
 <script>
     let data = {{ result | tojson }};
 
@@ -52,15 +59,17 @@
         return items.map(item => `<li>${item}</li>`).join("");
     }
 
-    if (!data) {
-        diet.innerHTML = "<p>⚠️ Unable to generate response.</p>";
-        exercise.innerHTML = "<p>⚠️ Please try again.</p>";
-        sleep.innerHTML = "<p>⚠️ Something went wrong.</p>";
+    // ✅ BETTER ERROR HANDLING
+    if (!data || !data.diet || !data.exercise || !data.sleep) {
+        diet.innerHTML = "<p>⚠️ Unable to generate a personalized plan right now.</p>";
+        exercise.innerHTML = "<p>Try again in a moment or refine your input.</p>";
+        sleep.innerHTML = "<p>We're improving your experience continuously.</p>";
     } else {
         diet.innerHTML = `<ul>${format(data.diet)}</ul>`;
         exercise.innerHTML = `<ul>${format(data.exercise)}</ul>`;
         sleep.innerHTML = `<ul>${format(data.sleep)}</ul>`;
     }
 </script>
+
 </body>
 </html>
