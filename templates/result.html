@@ -42,32 +42,25 @@
 
 </div>
 <script>
-let text = `{{ result|safe }}`;
+    let data = {{ result | tojson }};
 
-// Handle AI busy
-if (text === "AI_BUSY") {
-    diet.innerHTML = "<p>⚠️ AI is currently busy. Please try again shortly.</p>";
-    exercise.innerHTML = "<p>⚠️ Service temporarily unavailable.</p>";
-    sleep.innerHTML = "<p>⚠️ Please retry in a few moments.</p>";
-}
-else {
-    try {
-        let data = JSON.parse(text);
+    let diet = document.getElementById("diet");
+    let exercise = document.getElementById("exercise");
+    let sleep = document.getElementById("sleep");
 
-        function format(items) {
-            return items.map(item => `<li>${item}</li>`).join("");
-        }
+    function format(items) {
+        return items.map(item => `<li>${item}</li>`).join("");
+    }
 
+    if (!data) {
+        diet.innerHTML = "<p>⚠️ Unable to generate response.</p>";
+        exercise.innerHTML = "<p>⚠️ Please try again.</p>";
+        sleep.innerHTML = "<p>⚠️ Something went wrong.</p>";
+    } else {
         diet.innerHTML = `<ul>${format(data.diet)}</ul>`;
         exercise.innerHTML = `<ul>${format(data.exercise)}</ul>`;
         sleep.innerHTML = `<ul>${format(data.sleep)}</ul>`;
-
-    } catch (error) {
-        diet.innerHTML = "<p>⚠️ Failed to parse AI response.</p>";
-        exercise.innerHTML = "<p>⚠️ Formatting error.</p>";
-        sleep.innerHTML = "<p>⚠️ Please try again.</p>";
     }
-}
 </script>
 </body>
 </html>

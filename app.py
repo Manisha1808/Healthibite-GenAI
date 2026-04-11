@@ -36,15 +36,26 @@ def result():
     query = request.form.get("query")
 
     if get_health_recommendation is None:
-        result = "⚠️ AI system failed to load."
+        result = None
     else:
         try:
             result = get_health_recommendation(query, age, goal, activity)
         except Exception as e:
             print("Error in /result route:", e)
-            result = "⚠️ Something went wrong. Please try again."
+            result = None
 
-    return render_template("result.html", result=result)
+    # ✅ PARSE JSON HERE (CRITICAL FIX)
+    try:
+        parsed_result = json.loads(result) if result else None
+    except Exception as e:
+        print("JSON parse failed:", e)
+        parsed_result = {
+            "diet": ["Unable to generate response."],
+            "exercise": ["Please try again."],
+            "sleep": ["Something went wrong."]
+        }
+
+    return render_template("result.html", result=parsed_result)
 
 
 @app.route("/history")
