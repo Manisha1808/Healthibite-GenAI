@@ -6,7 +6,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 import os
 from dotenv import load_dotenv
 from functools import lru_cache
-from database import init_db
 from database import save_history
 # 🔑 Load environment variables
 load_dotenv()
@@ -33,17 +32,28 @@ def split_text(text, chunk_size=200, overlap=50):
 docs = split_text(text)
 
 # 🧠 Load embedding model ONCE
-embedding_model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
+embedding_model = None
+
+def get_embedding_model():
+    global embedding_model
+    if embedding_model is None:
+        print("Loading embedding model...")
+        embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+    return embedding_model
 
 # 🗄️ Load Persistent Chroma DB
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
 
-chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
-collection = chroma_client.get_or_create_collection(name="health_data")
+collection = None
 
+def get_collection():
+    global collection
+    if collection is None:
+        print("Loading Chroma DB...")
+        chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+        collection = chroma_client.get_or_create_collection(name="health_data")
+    return collection
 print("⚡ Loaded precomputed embeddings successfully!")
 
 
@@ -113,14 +123,17 @@ def detect_severity(query):
 def get_health_recommendation(query, age, goal, activity):
 
     # Generate query embedding
-    query_embedding = embedding_model.encode(query).tolist()
+    model = get_embedding_model()
+    query_embedding = model.encode(query)
 
     # Faster retrieval: reduced from 6 → 3
+    collection = get_collection()
+
     results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=3,
-        include=["documents", "embeddings"]
-    )
+    query_embeddings=[query_embedding],
+    n_results=3,
+    include=["documents", "embeddings"]
+)
 
     retrieved_docs = results["documents"][0]
     retrieved_embeddings = results["embeddings"][0]
@@ -305,5 +318,4 @@ Context:
 if __name__ == "__main__":
     print("Run app.py instead")
 
-init_db()
 

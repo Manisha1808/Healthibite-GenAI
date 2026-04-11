@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template, request
 import sqlite3
 import json
+from database import init_db
 
 # Safe RAG import
 try:
@@ -12,6 +13,8 @@ except Exception as e:
 
 app = Flask(__name__)
 app.jinja_env.filters['from_json'] = json.loads
+init_db()
+
 
 
 @app.route("/", methods=["GET"])
