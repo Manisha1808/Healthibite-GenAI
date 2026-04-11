@@ -7,6 +7,7 @@ from functools import lru_cache
 from database import save_history
 from sklearn.feature_extraction.text import TfidfVectorizer
 import re
+import json
 
 def clean_json_response(text):
     text = text.replace("```json", "").replace("```", "").strip()
@@ -222,15 +223,27 @@ Context:
             time.sleep(2)
 
     if response_text:
-        cleaned = clean_json_response(response_text)
+          cleaned = clean_json_response(response_text)
 
-        # Save history
-        try:
-            save_history(query, age, goal, activity, severity, cleaned)
-        except Exception as e:
-            print("Save history failed:", e)
+          try:
+              parsed = json.loads(cleaned)
+          except Exception as e:
+              print("⚠️ Invalid JSON from AI, using fallback")
 
-        return cleaned
+              parsed = {
+            "diet": ["Eat simple, balanced meals like rice, vegetables, and protein."],
+            "exercise": ["Do light walking for 15–20 minutes daily."],
+            "sleep": ["Maintain a consistent sleep schedule of 7–8 hours."]         }
+
+          cleaned = json.dumps(parsed)
+
+    # Save history
+          try:
+              save_history(query, age, goal, activity, severity, cleaned)
+          except Exception as e:
+              print("Save history failed:", e)
+
+          return cleaned
 
     return "AI_BUSY"
 
