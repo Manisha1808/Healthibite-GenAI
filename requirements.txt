@@ -1,5 +1,7 @@
-gunicorn
 flask
+gunicorn
 chromadb
 sentence-transformers
 google-generativeai
+scikit-learn
+python-dotenv

@@ -13,7 +13,13 @@ except Exception as e:
 
 app = Flask(__name__)
 app.jinja_env.filters['from_json'] = json.loads
-init_db()
+
+print("🔥 Flask app starting...")
+
+try:
+    init_db()
+except Exception as e:
+    print("DB init failed:", e)
 
 
 
