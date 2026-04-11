@@ -1,18 +1,22 @@
-from sentence_transformers import SentenceTransformer
 import chromadb
 from google import genai
 import time
-from sklearn.metrics.pairwise import cosine_similarity
 import os
 from dotenv import load_dotenv
 from functools import lru_cache
 from database import save_history
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # 🔑 Load environment variables
 load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key)
+
+if not api_key:
+    print("⚠️ GEMINI_API_KEY not found")
+    client = None
+else:
+    client = genai.Client(api_key=api_key)
 
 # 📄 Load data safely
 try:
@@ -33,65 +37,25 @@ def split_text(text, chunk_size=200, overlap=50):
 
 docs = split_text(text)
 
-# 🧠 Lazy load embedding model
-embedding_model = None
+# 🧠 Lightweight TF-IDF (no torch)
+vectorizer = TfidfVectorizer()
 
-def get_embedding_model():
-    global embedding_model
-    if embedding_model is None:
-        print("Loading embedding model...")
-        embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-    return embedding_model
+def get_embeddings(texts):
+    return vectorizer.fit_transform(texts).toarray()
 
-# 🗄️ Lazy load Chroma DB (Render-safe path)
-CHROMA_PATH = "/tmp/chroma_db"
-collection = None
-
-def get_collection():
-    global collection
-    if collection is None:
-        print("Loading Chroma DB...")
-        chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
-        collection = chroma_client.get_or_create_collection(name="health_data")
-    return collection
-
-print("⚡ RAG system ready")
+print("⚡ Lightweight RAG system ready")
 
 # ⚡ CACHE GEMINI RESPONSES
 @lru_cache(maxsize=100)
 def cached_gemini_response(prompt):
+    if client is None:
+        return "AI_BUSY"
+
     response = client.models.generate_content(
         model="gemini-3-flash-preview",
         contents=prompt
     )
     return response.text
-
-# 🔁 RERANK
-def rerank(query_embedding, docs, doc_embeddings):
-    scores = cosine_similarity(
-        [query_embedding],
-        doc_embeddings
-    )[0]
-
-    ranked_docs = [
-        doc for _, doc in sorted(
-            zip(scores, docs),
-            reverse=True
-        )
-    ]
-
-    return ranked_docs
-
-# 🔁 FILTER
-def filter_docs(query, docs):
-    keywords = query.lower().split()
-
-    filtered = []
-    for doc in docs:
-        if any(word in doc.lower() for word in keywords):
-            filtered.append(doc)
-
-    return filtered if filtered else docs
 
 # 🚨 SEVERITY DETECTOR
 def detect_severity(query):
@@ -118,25 +82,9 @@ def detect_severity(query):
 # 🔥 MAIN FUNCTION
 def get_health_recommendation(query, age, goal, activity):
 
-    # Embedding
-    model = get_embedding_model()
-    query_embedding = model.encode(query).tolist()
-
-    # Retrieval
-    collection = get_collection()
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=3,
-        include=["documents", "embeddings"]
-    )
-
-    retrieved_docs = results["documents"][0]
-    retrieved_embeddings = results["embeddings"][0]
-
-    ranked_docs = rerank(query_embedding, retrieved_docs, retrieved_embeddings)
-    filtered_docs = filter_docs(query, ranked_docs)
-
-    context = "\n".join(filtered_docs[:2])
+    # ✅ SIMPLE RETRIEVAL (NO CHROMA, SAFE FOR DEPLOY)
+    retrieved_docs = docs[:3]
+    context = "\n".join(retrieved_docs)
 
     # Severity
     severity = detect_severity(query)
@@ -267,7 +215,10 @@ Context:
         cleaned = response_text.replace("```json", "").replace("```", "").strip()
 
         # Save history
-        save_history(query, age, goal, activity, severity, cleaned)
+        try:
+            save_history(query, age, goal, activity, severity, cleaned)
+        except Exception as e:
+            print("Save history failed:", e)
 
         return cleaned
 

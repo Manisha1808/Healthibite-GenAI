@@ -1,7 +1,5 @@
 flask
 gunicorn
-chromadb
-sentence-transformers
-google-generativeai
 scikit-learn
+google-generativeai
 python-dotenv
