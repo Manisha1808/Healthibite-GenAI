@@ -7,16 +7,19 @@ import os
 from dotenv import load_dotenv
 from functools import lru_cache
 from database import save_history
+
 # 🔑 Load environment variables
 load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
-# 📄 Load data
-with open("data/health_docs.txt", "r", encoding="utf-8") as f:
-    text = f.read()
-
+# 📄 Load data safely
+try:
+    with open("data/health_docs.txt", "r", encoding="utf-8") as f:
+        text = f.read()
+except:
+    text = ""
 
 # ✂️ Chunking
 def split_text(text, chunk_size=200, overlap=50):
@@ -28,10 +31,9 @@ def split_text(text, chunk_size=200, overlap=50):
         start += chunk_size - overlap
     return chunks
 
-
 docs = split_text(text)
 
-# 🧠 Load embedding model ONCE
+# 🧠 Lazy load embedding model
 embedding_model = None
 
 def get_embedding_model():
@@ -41,10 +43,8 @@ def get_embedding_model():
         embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
     return embedding_model
 
-# 🗄️ Load Persistent Chroma DB
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
-
+# 🗄️ Lazy load Chroma DB (Render-safe path)
+CHROMA_PATH = "/tmp/chroma_db"
 collection = None
 
 def get_collection():
@@ -54,8 +54,8 @@ def get_collection():
         chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
         collection = chroma_client.get_or_create_collection(name="health_data")
     return collection
-print("⚡ Loaded precomputed embeddings successfully!")
 
+print("⚡ RAG system ready")
 
 # ⚡ CACHE GEMINI RESPONSES
 @lru_cache(maxsize=100)
@@ -65,7 +65,6 @@ def cached_gemini_response(prompt):
         contents=prompt
     )
     return response.text
-
 
 # 🔁 RERANK
 def rerank(query_embedding, docs, doc_embeddings):
@@ -83,7 +82,6 @@ def rerank(query_embedding, docs, doc_embeddings):
 
     return ranked_docs
 
-
 # 🔁 FILTER
 def filter_docs(query, docs):
     keywords = query.lower().split()
@@ -94,7 +92,6 @@ def filter_docs(query, docs):
             filtered.append(doc)
 
     return filtered if filtered else docs
-
 
 # 🚨 SEVERITY DETECTOR
 def detect_severity(query):
@@ -118,42 +115,36 @@ def detect_severity(query):
     else:
         return "mild"
 
-
 # 🔥 MAIN FUNCTION
 def get_health_recommendation(query, age, goal, activity):
 
-    # Generate query embedding
+    # Embedding
     model = get_embedding_model()
-    query_embedding = model.encode(query)
+    query_embedding = model.encode(query).tolist()
 
-    # Faster retrieval: reduced from 6 → 3
+    # Retrieval
     collection = get_collection()
-
     results = collection.query(
-    query_embeddings=[query_embedding],
-    n_results=3,
-    include=["documents", "embeddings"]
-)
+        query_embeddings=[query_embedding],
+        n_results=3,
+        include=["documents", "embeddings"]
+    )
 
     retrieved_docs = results["documents"][0]
     retrieved_embeddings = results["embeddings"][0]
 
-    ranked_docs = rerank(
-    query_embedding,
-    retrieved_docs,
-    retrieved_embeddings )
+    ranked_docs = rerank(query_embedding, retrieved_docs, retrieved_embeddings)
     filtered_docs = filter_docs(query, ranked_docs)
 
-    context = "\n".join(filtered_docs[:3])
+    context = "\n".join(filtered_docs[:2])
 
-    # 🚨 Detect symptom severity
+    # Severity
     severity = detect_severity(query)
 
-    # 🔥 Dynamic Prompt Rules
+    # Dynamic rules
     dynamic_rules = ""
 
-    # Goal-based rules
-    if goal.lower() == "weight management":
+    if goal and goal.lower() == "weight management":
         dynamic_rules += """
 If goal is weight loss:
 - suggest calorie deficit
@@ -161,58 +152,44 @@ If goal is weight loss:
 - suggest exact low-calorie meals
 """
 
-    elif goal.lower() == "muscle gain":
+    elif goal and goal.lower() == "muscle gain":
         dynamic_rules += """
 If goal is muscle gain:
 - suggest protein-rich diet
 - recommend strength training
 """
 
-    # Activity-based rules
-    if activity.lower() == "low":
+    if activity and activity.lower() == "low":
         dynamic_rules += """
 If activity level is low:
 - start with light exercise
 """
 
-    elif activity.lower() == "high":
+    elif activity and activity.lower() == "high":
         dynamic_rules += """
 If activity level is high:
-- recommend advanced exercise routines
+- recommend advanced routines
 """
 
-    # Severity rules
     if severity == "severe":
         dynamic_rules += """
 If symptoms appear severe:
-- strongly advise immediate medical consultation
-- mention urgent warning signs clearly
+- advise immediate medical consultation
 """
 
     elif severity == "moderate":
         dynamic_rules += """
 If symptoms appear moderate:
-- advise monitoring symptoms closely
-- recommend medical consultation if symptoms persist
+- monitor and consult doctor if persists
 """
 
     else:
         dynamic_rules += """
 If symptoms appear mild:
-- focus on home-care, diet, and lifestyle improvements
+- focus on home care and lifestyle
 """
 
-    # Diet-specific rules
-    diet_keywords = ["food", "diet", "eat", "nutrition", "meal"]
-
-    if any(word in query.lower() for word in diet_keywords):
-        dynamic_rules += """
-If query asks for diet advice:
-- focus on specific meal recommendations
-- include breakfast, lunch, dinner examples
-"""
-
-    # 🔥 Prompt
+    # Prompt
     prompt = f"""
 You are a professional health assistant.
 
@@ -263,26 +240,21 @@ STRICT RULES:
 - Each section must contain only its own advice
 - If unrelated, politely refuse health-unrelated query
 
-User Profile:
-- Age: {age}
-- Goal: {goal}
-- Activity Level: {activity}
 
-User Problem:
+User:
 {query}
 
 Context:
 {context}
 """
 
-    # ⚡ OPTIMIZED RESPONSE GENERATION WITH CACHE
+    # Gemini
     response_text = None
 
-    for i in range(3):
+    for _ in range(3):
         try:
             response_text = cached_gemini_response(prompt)
             break
-
         except Exception as e:
             print("Gemini error:", e)
 
@@ -294,28 +266,13 @@ Context:
     if response_text:
         cleaned = response_text.replace("```json", "").replace("```", "").strip()
 
-        print("\n==============================")
-        print("RAW GEMINI OUTPUT:")
-        print(cleaned)
-        print("==============================\n")
-
-        save_history(
-    query,
-    age,
-    goal,
-    activity,
-    severity,
-    cleaned
-)
+        # Save history
+        save_history(query, age, goal, activity, severity, cleaned)
 
         return cleaned
 
-    else:
-        return "AI_BUSY"
+    return "AI_BUSY"
 
 
-# ✅ SAFETY
 if __name__ == "__main__":
     print("Run app.py instead")
-
-
