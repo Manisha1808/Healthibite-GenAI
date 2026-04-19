@@ -18,7 +18,9 @@ def clean_json_response(text):
     return text
 
 # 🔑 Load environment variables
-load_dotenv()
+if os.getenv("RENDER") is None:
+    from dotenv import load_dotenv
+    load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
 
@@ -198,8 +200,20 @@ STRICT RULES:
 - No extra text before JSON
 - No extra text after JSON
 - Do NOT repeat sections
+- Do NOT include diet inside sleep
+- Do NOT include exercise inside sleep
 - Each section must contain only its own advice
-- If unrelated, politely refuse health-unrelated query
+- Keep answers concise and practical
+- If unrelated, respond with: "I'm a health-focused assistant and can only help with health, diet, exercise, or sleep-related questions."
+
+RESPONSE QUALITY RULES:
+- Keep recommendations professional, medically informed, and practical
+- Provide specific food examples instead of generic categories
+- Explain briefly why each recommendation helps
+- Avoid vague phrases like "eat healthy food"
+- Keep each recommendation between 1–2 concise professional sentences
+- Avoid overly academic wording
+- Sound like a real nutrition expert speaking to a patient
 
 
 User:
