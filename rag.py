@@ -60,17 +60,19 @@ print("⚡ Lightweight RAG system ready")
 # ⚡ CACHE GEMINI RESPONSES
 def get_gemini_response(prompt):
     if client is None:
-        return None
+        return "ERROR: API key missing"
 
     try:
         response = client.models.generate_content(
             model="gemini-3-flash-preview",
             contents=prompt
         )
+        print("RAW RESPONSE:", response)
         return response.text
+
     except Exception as e:
         print("Gemini error:", e)
-        return None
+        return f"ERROR: {str(e)}"
 
 # 🚨 SEVERITY DETECTOR
 def detect_severity(query):
@@ -229,13 +231,14 @@ Context:
     for _ in range(3):
         response_text = get_gemini_response(prompt)
 
-        if response_text:   # ✅ only break if valid response
+        if response_text and not str(response_text).startswith("ERROR"):
            break
+
 
         print("Retrying Gemini...")
         time.sleep(2)
-
-    if response_text is not None:
+    print("FINAL RESPONSE:", response_text)
+    if response_text and not str(response_text).startswith("ERROR"):
           cleaned = clean_json_response(response_text)
 
           try:
@@ -272,7 +275,11 @@ Context:
 
           return cleaned
 
-    return "AI_BUSY"
+    return json.dumps({
+    "diet": ["⚠️ Unable to generate response right now."],
+    "exercise": ["Please try again in a moment."],
+    "sleep": ["If issue persists, check API or logs."]
+})
 
 
 if __name__ == "__main__":
