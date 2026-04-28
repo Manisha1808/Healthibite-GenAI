@@ -34,6 +34,7 @@ It combines **Retrieval-Augmented Generation (RAG)** with Generative AI to produ
 - 📊 Re-ranking of retrieved documents for improved relevance
 - 🤖 AI-generated personalized recommendations
 - 🎯 Structured output (Diet, Exercise, Sleep)
+- 🗂️ User query history tracking using SQLite
 - ⚡ Optimized lightweight deployment version for performance
 - 🛡️ Handles API limits gracefully (AI busy state)
 - 🎨 Modern UI with glassmorphism design
@@ -101,12 +102,12 @@ For deployment, a lightweight version is used to ensure faster startup and avoid
 ## 📸 Output Screenshots
 
 ### 🔹 Home Page
-<img width="975" height="821" alt="image" src="https://github.com/user-attachments/assets/c2677d45-3c83-42c2-9042-175c81186f42" />
+<img width="717" height="621" alt="image" src="https://github.com/user-attachments/assets/e7c64847-746f-46c2-ad63-a9860ee4bc05" />
 
 ### 🔹 AI Recommendations Output
-<img width="975" height="582" alt="image" src="https://github.com/user-attachments/assets/57704e4d-4640-4d20-9384-7e18da0e68e4" />
+<img width="801" height="641" alt="image" src="https://github.com/user-attachments/assets/fda1f546-495c-43c8-8888-02f68fcd1ea2" />
 
-<img width="975" height="486" alt="image" src="https://github.com/user-attachments/assets/17a3f1a7-5fcc-4eb3-86b5-fae08180e845" />
+<img width="858" height="547" alt="image" src="https://github.com/user-attachments/assets/695d7b2f-41bb-42c6-9fce-08ea2b97c9b8" />
 
 ---
 
