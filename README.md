@@ -1,4 +1,5 @@
 # 🥗 HealthiBite – AI-Powered Health Recommendation System
+Built to simulate a real-world AI health assistant with structured, explainable outputs.
 
 
 ## 📌 Overview
@@ -15,6 +16,15 @@ It combines **Retrieval-Augmented Generation (RAG)** with Generative AI to produ
 ---
 
 🚀 **Live Demo: https://healthibite-genai.onrender.com
+
+---
+## 🚀 Project Highlights
+
+- Built a full **Retrieval-Augmented Generation (RAG)** pipeline  
+- Implemented **semantic search using vector similarity (TF-IDF / embeddings)**  
+- Integrated **LLM-based structured output generation (Gemini API)**  
+- Designed a **production-ready Flask application deployed on Render**  
+- Optimized system for **low-latency and free-tier deployment constraints**
 
 ---
 ## ✨ Features
@@ -40,7 +50,24 @@ It combines **Retrieval-Augmented Generation (RAG)** with Generative AI to produ
 - **Deployment:** Render  
 
 ---
+## 📂 Project Structure
 
+Healthibite-GenAI/
+│
+├── app.py
+├── rag.py
+├── database.py
+├── requirements.txt
+│
+├── templates/
+├── static/
+├── data/
+│
+└── advanced_rag/
+├── create_embeddings.py
+├── rag_embeddings.py
+
+---
 ## 🧠 How It Works
 
 1. **User Input**
@@ -93,7 +120,7 @@ For deployment, a lightweight version is used to ensure faster startup and avoid
 ## 🚀 Installation (Local Setup)
 
 ```bash
-git clone https://github.com/your-username/GenAI-Healthibite.git
+git clone https://github.com/Manisha1808/Healthibite-GenAI.git
 cd GenAI-Healthibite
 pip install -r requirements.txt
 
