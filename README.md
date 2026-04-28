@@ -51,11 +51,11 @@ It combines **Retrieval-Augmented Generation (RAG)** with Generative AI to produ
 
 ---
 ## 📂 Project Structure
-
+```
 Healthibite-GenAI/
 │
 ├── app.py
-├── rag.py
+├── rag.py                  # Lightweight RAG (TF-IDF for deployment)
 ├── database.py
 ├── requirements.txt
 │
@@ -64,9 +64,10 @@ Healthibite-GenAI/
 ├── data/
 │
 └── advanced_rag/
-├── create_embeddings.py
-├── rag_embeddings.py
-
+    ├── rag_embedding.py    # Embedding-based RAG (SentenceTransformer + ChromaDB)
+    ├── create_embeddings.py
+    └── README.md
+```
 ---
 ## 🧠 How It Works
 
