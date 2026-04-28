@@ -1,3 +1,7 @@
 .env
 __pycache__/
 *.pyc
+chroma_db/
+*.db
+create_embeddings.py
+test.py

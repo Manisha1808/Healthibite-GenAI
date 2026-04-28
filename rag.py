@@ -1,4 +1,4 @@
-from google import genai
+import google.generativeai as genai
 import time
 import os
 from dotenv import load_dotenv
@@ -7,6 +7,23 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import re
 import json
 
+# -------------------------------
+# LOAD ENV
+# -------------------------------
+load_dotenv()
+
+api_key = os.getenv("GEMINI_API_KEY")
+
+if not api_key:
+    print("⚠️ GEMINI_API_KEY not found")
+    client = None
+else:
+    genai.configure(api_key=api_key)
+    client = genai.GenerativeModel("gemini-3-flash-preview")
+
+# -------------------------------
+# CLEAN JSON
+# -------------------------------
 def clean_json_response(text):
     text = text.replace("```json", "").replace("```", "").strip()
 
@@ -16,27 +33,18 @@ def clean_json_response(text):
 
     return text
 
-# 🔑 Load environment variables
-if os.getenv("RENDER") is None:
-    from dotenv import load_dotenv
-    load_dotenv()
-
-api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    print("⚠️ GEMINI_API_KEY not found")
-    client = None
-else:
-    client = genai.Client(api_key=api_key)
-
-# 📄 Load data safely
+# -------------------------------
+# LOAD DATA
+# -------------------------------
 try:
     with open("data/health_docs.txt", "r", encoding="utf-8") as f:
         text = f.read()
 except:
     text = ""
 
-# ✂️ Chunking
+# -------------------------------
+# CHUNKING
+# -------------------------------
 def split_text(text, chunk_size=200, overlap=50):
     chunks = []
     start = 0
@@ -48,33 +56,38 @@ def split_text(text, chunk_size=200, overlap=50):
 
 docs = split_text(text)
 
-# 🧠 Lightweight TF-IDF (no torch)
+# -------------------------------
+# VECTORIZER
+# -------------------------------
 vectorizer = TfidfVectorizer()
 doc_vectors = vectorizer.fit_transform(docs)
 
-def get_embeddings(texts):
-    return vectorizer.fit_transform(texts).toarray()
-
 print("⚡ Lightweight RAG system ready")
 
-# ⚡ CACHE GEMINI RESPONSES
+# -------------------------------
+# GEMINI CALL
+# -------------------------------
 def get_gemini_response(prompt):
     if client is None:
         return "ERROR: API key missing"
 
     try:
-        response = client.models.generate_content(
-            model="gemini-3-flash-preview",
-            contents=prompt
-        )
-        print("RAW RESPONSE:", response)
-        return response.text
+        response = client.generate_content(prompt)
+
+        print("FULL RESPONSE:", response)
+
+        if hasattr(response, "text") and response.text:
+            return response.text
+        else:
+            return str(response)
 
     except Exception as e:
         print("Gemini error:", e)
         return f"ERROR: {str(e)}"
 
-# 🚨 SEVERITY DETECTOR
+# -------------------------------
+# SEVERITY
+# -------------------------------
 def detect_severity(query):
     severe_words = [
         "severe", "sharp pain", "vomiting", "blood",
@@ -96,72 +109,35 @@ def detect_severity(query):
     else:
         return "mild"
 
-# 🔥 MAIN FUNCTION
+# -------------------------------
+# MAIN FUNCTION
+# -------------------------------
 def get_health_recommendation(query, age, goal, activity):
 
-    
-
     query_vec = vectorizer.transform([query])
-
     scores = (doc_vectors * query_vec.T).toarray()
 
     top_indices = scores.flatten().argsort()[-3:][::-1]
-
     retrieved_docs = [docs[i] for i in top_indices]
-
 
     context = "\n".join(retrieved_docs)
 
-    # Severity
     severity = detect_severity(query)
 
-    # Dynamic rules
     dynamic_rules = ""
 
     if goal and goal.lower() == "weight management":
-        dynamic_rules += """
-If goal is weight loss:
-- suggest calorie deficit
-- recommend more cardio
-- suggest exact low-calorie meals
-"""
-
+        dynamic_rules += "Suggest calorie deficit and cardio.\n"
     elif goal and goal.lower() == "muscle gain":
-        dynamic_rules += """
-If goal is muscle gain:
-- suggest protein-rich diet
-- recommend strength training
-"""
+        dynamic_rules += "Suggest protein-rich diet and strength training.\n"
 
-    if activity and activity.lower() == "low":
-        dynamic_rules += """
-If activity level is low:
-- start with light exercise
-"""
-
-    elif activity and activity.lower() == "high":
-        dynamic_rules += """
-If activity level is high:
-- recommend advanced routines
-"""
+    if activity == "low":
+        dynamic_rules += "Start with light exercise.\n"
+    elif activity == "high":
+        dynamic_rules += "Recommend advanced routines.\n"
 
     if severity == "severe":
-        dynamic_rules += """
-If symptoms appear severe:
-- advise immediate medical consultation
-"""
-
-    elif severity == "moderate":
-        dynamic_rules += """
-If symptoms appear moderate:
-- monitor and consult doctor if persists
-"""
-
-    else:
-        dynamic_rules += """
-If symptoms appear mild:
-- focus on home care and lifestyle
-"""
+        dynamic_rules += "Advise immediate medical consultation.\n"
 
     # Prompt
     prompt = f"""
@@ -234,62 +210,30 @@ Context:
 {context}
 """
 
-    # Gemini
-    response_text = None
 
-    for _ in range(3):
-        response_text = get_gemini_response(prompt)
+    response_text = get_gemini_response(prompt)
 
-        if response_text and not str(response_text).startswith("ERROR"):
-           break
+    if response_text.startswith("ERROR"):
+        return json.dumps({
+            "diet": ["Unable to generate response"],
+            "exercise": ["Try again"],
+            "sleep": ["Check API"]
+        })
 
+    cleaned = clean_json_response(response_text)
 
-        print("Retrying Gemini...")
-        time.sleep(2)
-    print("FINAL RESPONSE:", response_text)
-    if response_text and not str(response_text).startswith("ERROR"):
-          cleaned = clean_json_response(response_text)
+    try:
+        parsed = json.loads(cleaned)
+    except:
+        parsed = {
+            "diet": ["Simple home food"],
+            "exercise": ["Light walking"],
+            "sleep": ["7-8 hours sleep"]
+        }
 
-          try:
-              parsed = json.loads(cleaned)
-          except Exception as e:
-              
-              print("⚠️ Invalid JSON from AI, using fallback")
+    try:
+        save_history(query, age, goal, activity, severity, json.dumps(parsed))
+    except Exception as e:
+        print("Save failed:", e)
 
-              parsed = {
-        "diet": [
-            "Eat simple, home-cooked meals like rice, dal, vegetables, and fruits.",
-            "Stay hydrated and avoid processed or heavy foods.",
-            "Include light and easily digestible meals throughout the day."
-        ],
-        "exercise": [
-            "Do light walking for 15–20 minutes daily.",
-            "Avoid heavy workouts if you are not feeling well.",
-            "Stretch your body gently to reduce stiffness."
-        ],
-        "sleep": [
-            "Maintain 7–8 hours of sleep.",
-            "Avoid screens before bedtime.",
-            "Keep a consistent sleep schedule."
-        ]
-    }
-
-              cleaned = json.dumps(parsed)
-
-    # Save history
-          try:
-              save_history(query, age, goal, activity, severity, cleaned)
-          except Exception as e:
-              print("Save history failed:", e)
-
-          return cleaned
-
-    return json.dumps({
-    "diet": ["⚠️ Unable to generate response right now."],
-    "exercise": ["Please try again in a moment."],
-    "sleep": ["If issue persists, check API or logs."]
-})
-
-
-if __name__ == "__main__":
-    print("Run app.py instead")
+    return json.dumps(parsed)
