@@ -23,7 +23,7 @@ It combines **Retrieval-Augmented Generation (RAG)** with Generative AI to produ
 - Built a full **Retrieval-Augmented Generation (RAG)** pipeline  
 - Implemented **semantic search using vector similarity (TF-IDF / embeddings)**  
 - Integrated **LLM-based structured output generation (Gemini API)**  
-- Designed a **production-ready Flask application deployed on Render**  
+- Designed and deployed a **production-aware Flask application on Render**  
 - Optimized system for **low-latency and free-tier deployment constraints**
 
 ---
