@@ -106,8 +106,7 @@ For deployment, a lightweight version is used to ensure faster startup and avoid
 
 ### 🔹 AI Recommendations Output
 <img width="801" height="641" alt="image" src="https://github.com/user-attachments/assets/fda1f546-495c-43c8-8888-02f68fcd1ea2" />
-
-<img width="858" height="547" alt="image" src="https://github.com/user-attachments/assets/695d7b2f-41bb-42c6-9fce-08ea2b97c9b8" />
+<img width="801" height="641" alt="image" src="https://github.com/user-attachments/assets/da1feb7a-cf33-4cae-afa3-f62ba3b28d9c" />
 
 ---
 
