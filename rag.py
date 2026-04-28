@@ -50,6 +50,7 @@ docs = split_text(text)
 
 # 🧠 Lightweight TF-IDF (no torch)
 vectorizer = TfidfVectorizer()
+doc_vectors = vectorizer.fit_transform(docs)
 
 def get_embeddings(texts):
     return vectorizer.fit_transform(texts).toarray()
@@ -98,8 +99,17 @@ def detect_severity(query):
 # 🔥 MAIN FUNCTION
 def get_health_recommendation(query, age, goal, activity):
 
-    # ✅ SIMPLE RETRIEVAL (NO CHROMA, SAFE FOR DEPLOY)
-    retrieved_docs = docs[:3]
+    
+
+    query_vec = vectorizer.transform([query])
+
+    scores = (doc_vectors * query_vec.T).toarray()
+
+    top_indices = scores.flatten().argsort()[-3:][::-1]
+
+    retrieved_docs = [docs[i] for i in top_indices]
+
+
     context = "\n".join(retrieved_docs)
 
     # Severity
